@@ -36,32 +36,15 @@ const command = {
     ],
     allowedGlobalOptions: ["config"]
   },
-  runConsole: async (config, ganacheOptions) => {
-    const Console = require("../console");
-    const {Environment} = require("@truffle/environment");
 
-    const commands = require("./index");
-    const excluded = new Set(["console", "develop", "unbox", "init"]);
-
-    const consoleCommands = Object.keys(commands).reduce((acc, name) => {
-      return !excluded.has(name)
-        ? Object.assign(acc, {[name]: commands[name]})
-        : acc;
-    }, {});
-
-    await Environment.develop(config, ganacheOptions);
-    const c = new Console(consoleCommands, config.with({noAliases: true}));
-    c.on("exit", () => process.exit());
-    return await c.start();
-  },
   run: async options => {
-    const {Develop} = require("@truffle/environment");
+    const { Develop } = require("@truffle/environment");
     const Config = require("@truffle/config");
 
     const config = Config.detect(options);
     const customConfig = config.networks.develop || {};
 
-    const {mnemonic, accounts, privateKeys} = mnemonicInfo.getAccountsInfo(
+    const { mnemonic, accounts, privateKeys } = mnemonicInfo.getAccountsInfo(
       customConfig.accounts || 10
     );
 
@@ -72,7 +55,7 @@ const command = {
       "This mnemonic was created for you by Truffle. It is not secure.\n" +
       "Ensure you do not use it on production blockchains, or else you risk losing funds.";
 
-    const ipcOptions = {log: options.log};
+    const ipcOptions = { log: options.log };
 
     const ganacheOptions = {
       host: customConfig.host || "127.0.0.1",
@@ -86,6 +69,8 @@ const command = {
       gasLimit: customConfig.gas || 0x6691b7,
       gasPrice: customConfig.gasPrice || 0x77359400,
       time: config.genesis_time,
+      vmErrorsOnRPCResponse: customConfig.vmErrorsOnRPCResponse || false,
+      legacyInstamine: customConfig.legacyInstamine || false,
       _chainId: 1337 //temporary until Ganache v3!
     };
 
@@ -141,6 +126,25 @@ const command = {
       return new Promise(() => {});
     }
     return await command.runConsole(config, ganacheOptions);
+  },
+
+  runConsole: async (config, ganacheOptions) => {
+    const Console = require("../console");
+    const { Environment } = require("@truffle/environment");
+
+    const commands = require("./index");
+    const excluded = new Set(["console", "develop", "unbox", "init"]);
+
+    const consoleCommands = Object.keys(commands).reduce((acc, name) => {
+      return !excluded.has(name)
+        ? Object.assign(acc, { [name]: commands[name] })
+        : acc;
+    }, {});
+
+    await Environment.develop(config, ganacheOptions);
+    const c = new Console(consoleCommands, config.with({ noAliases: true }));
+    c.on("exit", () => process.exit());
+    return await c.start();
   }
 };
 
